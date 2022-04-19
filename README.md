@@ -15,7 +15,7 @@
 7] After getting the left lane equation and right lane equation we begin to alocate them and highlight the lane
  
 8] from these polynomials we also get the radius of curvature of the left and right lanes then get their average to be the radius of curvature of the road
-    and display it on the image
+    and we also get the vehicle center position relative to the center of lane 
 
 10] The input video is then sent to the process_image function which applies all the previous steps to each frame
 
