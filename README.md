@@ -26,3 +26,13 @@
 12] The pictures are then sent to add_text function to write the data on each frame
 
 13] Finally the process_image function concatinates the different outputs of each stage together to show the final output
+
+# Usage :
+you should run shell script file [project.sh] 
+
+1] open bash command where project.sh & project.py located
+
+2] write ./project.sh "InputPath" "OutPath" --debug_mode 0 
+
+ Note : when debug mode 0 so it will get the final output vedio only but if it's 1 , it will get the final output with all phases of transformation 
+
