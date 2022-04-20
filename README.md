@@ -31,6 +31,7 @@
 you should run shell script file [project.sh] 
 
 1] open bash command where shell script & project.py located
+
 2] write ./project.sh "InputPath" "OutPath" --debug_mode 0 
 
  Note : when debug mode 0 so it will get the final output vedio only buf if it's 1 , it will get the final output with all phases of transformation 
