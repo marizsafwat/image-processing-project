@@ -17,12 +17,12 @@
 8] from these polynomials we also get the radius of curvature of the left and right lanes then get their average to be the radius of curvature of the road
     and we also get the vehicle center position relative to the center of lane 
 
-10] The input video is then sent to the process_image function which applies all the previous steps to each frame
+9] The input video is then sent to the process_image function which applies all the previous steps to each frame
 
-11] The process_image functions converts the images to binary to make it easier for lane detection
+10] The process_image functions converts the images to binary to make it easier for lane detection
 
-12] Vehicle position and radius of curvature are then calculated by calling their functions
+11] Vehicle position and radius of curvature are then calculated by calling their functions
 
-13] The pictures are then sent to add_text function to write the data on each frame
+12] The pictures are then sent to add_text function to write the data on each frame
 
-14] Finally the process_image function concatinates the different outputs of each stage together to show the final output
+13] Finally the process_image function concatinates the different outputs of each stage together to show the final output
