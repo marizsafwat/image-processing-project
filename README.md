@@ -30,7 +30,7 @@
 # Usage :
 you should run shell script file [project.sh] 
 
-1] open bash command where shell script & project.py located
+1] open bash command where project.sh & project.py located
 
 2] write ./project.sh "InputPath" "OutPath" --debug_mode 0 
 
