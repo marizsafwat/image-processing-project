@@ -34,5 +34,5 @@ you should run shell script file [project.sh]
 
 2] write ./project.sh "InputPath" "OutPath" --debug_mode 0 
 
- Note : when debug mode 0 so it will get the final output vedio only buf if it's 1 , it will get the final output with all phases of transformation 
+ Note : when debug mode 0 so it will get the final output vedio only but if it's 1 , it will get the final output with all phases of transformation 
 
