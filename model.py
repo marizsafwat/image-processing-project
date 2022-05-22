@@ -15,6 +15,7 @@ import glob
 import sys
 from skimage.feature import hog
 import pickle
+import os
 
 
 # In[ ]:
@@ -201,19 +202,19 @@ print(round(t2-t, 5), 'Seconds to predict', n_predict,'labels with SVC')
 
 #Pickle the data as it takes a lot of time to generate it
 
-# data_file = './svc_pickle.p'
-pickle.dump(svc, open('svc_pickle.pkl', "wb"))
-# if not os.path.isfile(data_file):
-#     with open(data_file, 'wb') as pfile:
-#         pickle.dump(
-#             {
-#                 'svc': svc,
-#                 'scaler': X_scaler,
-#                 'orient': orient,
-#                 'pix_per_cell': pix_per_cell,
-#                 'cell_per_block': cell_per_block,
-#             },
-            # pfile, pickle.HIGHEST_PROTOCOL)
+data_file = './svc_pickle.p'
+#pickle.dump(svc, open('svc_pickle.pkl', "wb"))
+if not os.path.isfile(data_file):
+     with open(data_file, 'wb') as pfile:
+         pickle.dump(
+             {
+                 'svc': svc,
+                 'scaler': X_scaler,
+                 'orient': orient,
+                 'pix_per_cell': pix_per_cell,
+                 'cell_per_block': cell_per_block,
+             },
+             pfile, pickle.HIGHEST_PROTOCOL)
 
-# print('Data saved in pickle file')
+print('Data saved in pickle file')
 
