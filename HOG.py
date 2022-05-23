@@ -6,6 +6,12 @@
 # In[4]:
 
 
+import pickle
+import queue
+from IPython.display import HTML
+from moviepy.editor import VideoFileClip
+from scipy.ndimage.measurements import label
+from skimage.feature import hog
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
@@ -68,25 +74,24 @@ def convert_color(img, conv='RGB2YCrCb'):
 # In[32]:
 
 
-from skimage.feature import hog
-
-
 def get_hog_features(img, orient, pix_per_cell, cell_per_block,
                      vis=False, feature_vec=True):
     """
     Return the hog features of the given input image
     Call with two outputs if vis==True"""
-    # THE RETURN HOG FEATURES & HOG IMAGE 
+    # THE RETURN HOG FEATURES & HOG IMAGE
     if vis == True:
         features, hog_image = hog(img, orientations=orient, pixels_per_cell=(pix_per_cell, pix_per_cell),
-                                  cells_per_block=(cell_per_block, cell_per_block), transform_sqrt=True,
+                                  cells_per_block=(
+                                      cell_per_block, cell_per_block), transform_sqrt=True,
                                   visualize=vis, feature_vector=feature_vec)
         return features, hog_image
     # Otherwise call with one output
      # THE RETURN HOG FEATURES ONLY
     else:
         features = hog(img, orientations=orient, pixels_per_cell=(pix_per_cell, pix_per_cell),
-                       cells_per_block=( cell_per_block, cell_per_block), transform_sqrt=True,
+                       cells_per_block=(
+                           cell_per_block, cell_per_block), transform_sqrt=True,
                        visualize=vis, feature_vector=feature_vec)
         return features
 
@@ -96,9 +101,9 @@ def get_hog_features(img, orient, pix_per_cell, cell_per_block,
 # In[33]:
 
 
-#Read cars and not-cars images
+# Read cars and not-cars images
 
-#Data folders
+# Data folders
 test_images_dir = sys.argv[1]
 
 # images are divided up into vehicles and non-vehicles
@@ -113,9 +118,8 @@ for image in images:
 # In[34]:
 
 
-import pickle 
-dist_pickle = pickle.load( open("svc_pickle.p", "rb" ) )
-#print(dist_pickle)
+dist_pickle = pickle.load(open("svc_pickle.p", "rb"))
+# print(dist_pickle)
 svc = dist_pickle["svc"]
 X_scaler = dist_pickle["scaler"]
 orient = dist_pickle["orient"]
@@ -130,35 +134,38 @@ cell_per_block = dist_pickle["cell_per_block"]
 
 # Define a single function that can extract features using hog sub-sampling and make predictions
 def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, vis_bboxes=False):
-    #print(img.shape)
+    # print(img.shape)
     draw_img = np.copy(img)
-    #cropping only needed part of picture (that includes cars)
+    # cropping only needed part of picture (that includes cars)
     xstart = int(img.shape[1]/5)
     xstop = img.shape[1]
     img_tosearch = img[ystart:ystop, xstart:xstop, :]
     ctrans_tosearch = convert_color(img_tosearch, conv='RGB2YUV')
-    if scale != 1: #decrease picture size according to
+    if scale != 1:  # decrease picture size according to
         imshape = ctrans_tosearch.shape
         ctrans_tosearch = cv2.resize(
-            ctrans_tosearch, (int(imshape[1]/scale), int(imshape[0]/scale)))  #resize(img,(width,height))
-        
+            ctrans_tosearch, (int(imshape[1]/scale), int(imshape[0]/scale)))  # resize(img,(width,height))
+
     ch1 = ctrans_tosearch[:, :, 0]
     ch2 = ctrans_tosearch[:, :, 1]
     ch3 = ctrans_tosearch[:, :, 2]
-   
-    # Define blocks and steps as above #(height,width,channels) 
-    nxblocks = (ch1.shape[1] // pix_per_cell) - cell_per_block + 1 # (width //8)-2+1  = 127
-    nyblocks = (ch1.shape[0] // pix_per_cell) - cell_per_block + 1 # (height //8)-2+1 =15
+
+    # Define blocks and steps as above #(height,width,channels)
+    nxblocks = (ch1.shape[1] // pix_per_cell) - \
+        cell_per_block + 1  # (width //8)-2+1  = 127
+    nyblocks = (ch1.shape[0] // pix_per_cell) - \
+        cell_per_block + 1  # (height //8)-2+1 =15
     nfeat_per_block = orient*cell_per_block**2
 
     # 64 was the orginal sampling rate, with 8 cells and 8 pix per cell
     window = 64
-    nblocks_per_window = (window // pix_per_cell) - cell_per_block + 1 #7 blocks per window 
+    nblocks_per_window = (window // pix_per_cell) - \
+        cell_per_block + 1  # 7 blocks per window
 
     # Instead of overlap, define how many cells to step
     # 2 means 25% of the 8 pixels ==> 75% overlap with the next window vertiaccly & horizontally
-    cells_per_step = 2  
-    
+    cells_per_step = 2
+
     nxsteps = (nxblocks - nblocks_per_window) // cells_per_step
     nysteps = (nyblocks - nblocks_per_window) // cells_per_step
 
@@ -171,9 +178,9 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, ce
                             cell_per_block, feature_vec=False)
     rectangles = []
 
-    #The find_cars only has to extract hog features once, for each of a small set of predetermined window sizes
+    # The find_cars only has to extract hog features once, for each of a small set of predetermined window sizes
     #  (defined by a scale argument), and then can be sub-sampled to get all of its overlaying windows.
-    #  Each window is defined by a scaling factor that impacts the window size. The scale factor can be set on different 
+    #  Each window is defined by a scaling factor that impacts the window size. The scale factor can be set on different
     # regions of the image (e.g. small near the horizon, larger in the center).
 
     for xb in range(nxsteps):
@@ -194,7 +201,7 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, ce
 
             xleft = xpos*pix_per_cell
             ytop = ypos*pix_per_cell
-            
+
             test_features = X_scaler.transform(hog_features)
             #test_features = X_scaler.transform(np.hstack((shape_feat, hist_feat)).reshape(1, -1))
             test_prediction = svc.predict(test_features)
@@ -204,7 +211,7 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, ce
                 ytop_draw = int(ytop*scale)
                 win_draw = int(window*scale)
                 rectangles.append(((xbox_left+xstart, ytop_draw+ystart),
-                                  (xbox_left+win_draw+xstart, ytop_draw+win_draw+ystart))) #each rectangle is in form ((x1,y1),(x2,y2))
+                                  (xbox_left+win_draw+xstart, ytop_draw+win_draw+ystart)))  # each rectangle is in form ((x1,y1),(x2,y2))
     return rectangles
 
 
@@ -217,18 +224,18 @@ def get_rectangles(image, scales=[1, 1.5, 2, 2.5, 3],
                    ystarts=[400, 400, 450, 450, 460],
                    ystops=[528, 550, 620, 650, 700]):
     out_rectangles = []
-    svc = pickle.load(open('svc_pickle.pkl', 'rb'))
+    #svc = pickle.load(open('svc_pickle.pkl', 'rb'))
     for scale, ystart, ystop in zip(scales, ystarts, ystops):
         rectangles = find_cars(image, ystart, ystop, scale,
                                svc, X_scaler, orient, pix_per_cell, cell_per_block)
         if len(rectangles) > 0:
-            out_rectangles.append(rectangles)  
+            out_rectangles.append(rectangles)
     out_rectangles = [item for sublist in out_rectangles for item in sublist]
     return out_rectangles
 
 
 # # Draw all boxes
-# 
+#
 
 # In[37]:
 
@@ -244,7 +251,8 @@ def draw_boxes(img, bboxes, color=(0, 0, 255), thick=6):
                 0, 255), np.random.randint(0, 255))
             random_color = True
         # Draw a rectangle given bbox coordinates
-        cv2.rectangle(imcopy, bbox[0], bbox[1], color, thick) #cv2.rectangle(image_to_draw_on, (x1, y1), (x2, y2), color, thick)
+        # cv2.rectangle(image_to_draw_on, (x1, y1), (x2, y2), color, thick)
+        cv2.rectangle(imcopy, bbox[0], bbox[1], color, thick)
     # Return the image copy with boxes drawn
     return imcopy
 
@@ -255,9 +263,9 @@ def draw_boxes(img, bboxes, color=(0, 0, 255), thick=6):
 
 
 image = test_images[0]
-scales=[1, 1.5, 2, 2.5, 3]
-ystarts=[400, 400, 450, 450, 460]
-ystops=[528, 550, 620, 650, 700]
+scales = [1, 1.5, 2, 2.5, 3]
+ystarts = [400, 400, 450, 450, 460]
+ystops = [528, 550, 620, 650, 700]
 out_rectangles = []
 scale_images = []
 imcopy = np.copy(image)
@@ -266,13 +274,13 @@ scale_images.append(imcopy)
 
 for scale, ystart, ystop in zip(scales, ystarts, ystops):
     rectangles = find_cars(image, ystart, ystop, scale, svc, X_scaler,
-                            orient, pix_per_cell, cell_per_block, vis_bboxes=True) #function is called 5 times for each image 
+                           orient, pix_per_cell, cell_per_block, vis_bboxes=True)  # function is called 5 times for each image
     if len(rectangles) > 0:
         out_rectangles.append(rectangles)
     out_rectangles = [item for sublist in out_rectangles for item in sublist]
-    scale_image= draw_boxes(imcopy,out_rectangles,color='random',thick=3)
+    scale_image = draw_boxes(imcopy, out_rectangles, color='random', thick=3)
     scale_images.append(scale_image)
-    out_rectangles=[]
+    out_rectangles = []
 #visualize_images(scale_images,2,"Windows with different scales")
 
 
@@ -286,10 +294,11 @@ def add_heat(heatmap, bbox_list):
     for box in bbox_list:
         # Add += 1 for all pixels inside each bbox
         # Assuming each "box" takes the form ((x1, y1), (x2, y2))
-        #heatmap[y1:y2,x1:x2] +=1 
-        heatmap[box[0][1]:box[1][1], box[0][0]:box[1][0]] += 1 #y1=box[0][1],y2=bos[1][1],x1=box[0][0],x2=box[1][0]
+        #heatmap[y1:y2,x1:x2] +=1
+        # y1=box[0][1],y2=bos[1][1],x1=box[0][0],x2=box[1][0]
+        heatmap[box[0][1]:box[1][1], box[0][0]:box[1][0]] += 1
     # Return updated heatmap
-     
+
     return heatmap
 
 
@@ -326,7 +335,7 @@ def draw_labeled_bboxes(img, labels):
         if area > 40 * 40:
             result_rectangles.append(bbox)
             # Draw the box on the image
-            cv2.rectangle(img_copy, bbox[0], bbox[1],(185, 76, 255), 6)
+            cv2.rectangle(img_copy, bbox[0], bbox[1], (185, 76, 255), 6)
     # Return the image
     return result_rectangles, img_copy, label_image
 
@@ -336,54 +345,55 @@ def draw_labeled_bboxes(img, labels):
 # In[46]:
 
 
-# define a function for vertically 
+# define a function for vertically
 # concatenating images of different
-# widths 
-def vconcat_resize(img_list, interpolation 
-                   = cv2.INTER_CUBIC):
-      # take minimum width
-    w_min = min(img.shape[1] 
+# widths
+def vconcat_resize(img_list, interpolation=cv2.INTER_CUBIC):
+    # take minimum width
+    w_min = min(img.shape[1]
                 for img in img_list)
-      
+
     # resizing images
     im_list_resize = [cv2.resize(img,
                       (w_min, int(img.shape[0] * w_min / img.shape[1])),
-                                 interpolation = interpolation)
-                      for img in img_list]
+        interpolation=interpolation)
+        for img in img_list]
     # return final image
     return cv2.vconcat(im_list_resize)
-  
-# define a function for horizontally 
+
+# define a function for horizontally
 # concatenating images of different
-# heights 
-def hconcat_resize(img_list, 
-                   interpolation 
-                   = cv2.INTER_CUBIC):
-      # take minimum hights
-    h_min = min(img.shape[0] 
+# heights
+
+
+def hconcat_resize(img_list,
+                   interpolation=cv2.INTER_CUBIC):
+    # take minimum hights
+    h_min = min(img.shape[0]
                 for img in img_list)
-      
-    # image resizing 
+
+    # image resizing
     im_list_resize = [cv2.resize(img,
-                       (int(img.shape[1] * h_min / img.shape[0]),
-                        h_min), interpolation
-                                 = interpolation) 
+                                 (int(img.shape[1] * h_min / img.shape[0]),
+                                  h_min), interpolation=interpolation)
                       for img in img_list]
-      
+
     # return final image
     return cv2.hconcat(im_list_resize)
-  
+
 # define a function for concatenating
 # images of different sizes in
 # vertical and horizontal tiles
-def concat_tile_resize(list_2d, 
-                       interpolation = cv2.INTER_CUBIC):
-      # function calling for every 
+
+
+def concat_tile_resize(list_2d,
+                       interpolation=cv2.INTER_CUBIC):
+    # function calling for every
     # list of images
-    img_list_v = [hconcat_resize(list_h, 
-                                 interpolation = cv2.INTER_CUBIC) 
+    img_list_v = [hconcat_resize(list_h,
+                                 interpolation=cv2.INTER_CUBIC)
                   for list_h in list_2d]
-      
+
     # return final image
     return vconcat_resize(img_list_v, interpolation=cv2.INTER_CUBIC)
 
@@ -393,25 +403,25 @@ def concat_tile_resize(list_2d,
 # In[42]:
 
 
-from scipy.ndimage.measurements import label
-
 result_images = []
 result_boxes = []
 heatmap_images = []
 result_img_all_boxes = []
-test_image_t=test_images[3]
-label_images =[]
-result_row_boxes=[]
+test_image_t = test_images[3]
+label_images = []
+result_row_boxes = []
 for test_image in test_images:
     rectangles = get_rectangles(test_image)
     result_img_all_boxes.append(draw_boxes(
         test_image, rectangles, color='random', thick=3))
-    heatmap_image = np.zeros_like(test_image[:, :, 0]) #make a copy of the test image with all values =0
+    # make a copy of the test image with all values =0
+    heatmap_image = np.zeros_like(test_image[:, :, 0])
     heatmap_image = add_heat(heatmap_image, rectangles)
     heatmap_images.append(heatmap_image)
     heatmap_image = apply_threshold(heatmap_image, 2)
     labels = label(heatmap_image)
-    rectangles, result_image,label_image = draw_labeled_bboxes(test_image, labels)
+    rectangles, result_image, label_image = draw_labeled_bboxes(
+        test_image, labels)
     result_boxes.append(rectangles)
     result_images.append(result_image)
     label_images.append(label_image)
@@ -422,18 +432,18 @@ for test_image in test_images:
 # In[72]:
 
 
-def visualize_bboxes(image, scales = [1, 1.5, 2, 2.5, 3], 
-                   ystarts = [400, 400, 450, 450, 460], 
-                   ystops = [528, 550, 620, 650, 700]):
+def visualize_bboxes(image, scales=[1, 1.5, 2, 2.5, 3],
+                     ystarts=[400, 400, 450, 450, 460],
+                     ystops=[528, 550, 620, 650, 700]):
     out_rectangles = []
     for scale, ystart, ystop in zip(scales, ystarts, ystops):
-        rectangles = find_cars(image, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, vis_bboxes = True)
+        rectangles = find_cars(image, ystart, ystop, scale, svc, X_scaler,
+                               orient, pix_per_cell, cell_per_block, vis_bboxes=True)
         if len(rectangles) > 0:
             out_rectangles.append(rectangles)
-    out_rectangles = [item for sublist in out_rectangles for item in sublist] 
+    out_rectangles = [item for sublist in out_rectangles for item in sublist]
 
-   
-    bboxes_image=(draw_boxes(image, out_rectangles, color='random', thick=3))
+    bboxes_image = (draw_boxes(image, out_rectangles, color='random', thick=3))
     return bboxes_image
 
 
@@ -450,11 +460,10 @@ def visualize_bboxes(image, scales = [1, 1.5, 2, 2.5, 3],
 # In[44]:
 
 
-
 #visualize_images(heatmap_images, 2, "Heatmap", cmap="hot")
 
 
-# # Visualize labeled images 
+# # Visualize labeled images
 
 # In[ ]:
 
@@ -473,11 +482,6 @@ def visualize_bboxes(image, scales = [1, 1.5, 2, 2.5, 3],
 # # Processing video
 
 # In[322]:
-
-
-from moviepy.editor import VideoFileClip
-from IPython.display import HTML
-import queue
 
 
 class DetectionInfo():
@@ -516,7 +520,7 @@ def find_vehicles(image):
     if len(labels) == 0:
         result_image = image
     else:
-        bboxes, result_image,label_image = draw_labeled_bboxes(image, labels)
+        bboxes, result_image, label_image = draw_labeled_bboxes(image, labels)
 
     return result_image
 
@@ -527,26 +531,28 @@ def find_vehicles(image):
 def debugging(test_image):
 
     rectangles = get_rectangles(test_image)
-    result_img_all_boxes=draw_boxes(test_image, rectangles, color='random', thick=3)
-    heatmap_image = np.zeros_like(test_image[:, :, 0]) #make a copy of the test image with all values =0
+    result_img_all_boxes = draw_boxes(
+        test_image, rectangles, color='random', thick=3)
+    # make a copy of the test image with all values =0
+    heatmap_image = np.zeros_like(test_image[:, :, 0])
     heatmap_image = add_heat(heatmap_image, rectangles)
     heatmap_image = apply_threshold(heatmap_image, 2)
     labels = label(heatmap_image)
-    rectangles, result_image,label_image = draw_labeled_bboxes(test_image, labels)
+    rectangles, result_image, label_image = draw_labeled_bboxes(
+        test_image, labels)
 
-    scale_image= visualize_bboxes(test_image)
-    
-    vertical = vconcat_resize([result_img_all_boxes,scale_image])
-    merged = hconcat_resize([result_image,vertical])
+    scale_image = visualize_bboxes(test_image)
+
+    vertical = vconcat_resize([result_img_all_boxes, scale_image])
+    merged = hconcat_resize([result_image, vertical])
     return merged
     return merged
-    
 
 
 # In[ ]:
 
 
-merged_pic=debugging(test_images[0])
+merged_pic = debugging(test_images[0])
 plt.imshow(merged_pic)
 
 
@@ -556,7 +562,7 @@ detection_info = DetectionInfo()
 detection_info.old_heatmap = np.zeros_like(test_images[0][:, :, 0])
 Output_video = sys.argv[3]
 Input_video = sys.argv[2]
-debug=int(sys.argv[5])
+debug = int(sys.argv[5])
 clip1 = VideoFileClip(Input_video)
 # This function send frame image & expects color images as a return
 if(debug):
@@ -565,4 +571,3 @@ if(debug):
 else:
     video_clip = clip1.fl_image(find_vehicles)
     video_clip.write_videofile(Output_video, audio=False)
-
